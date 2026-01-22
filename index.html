@@ -77,6 +77,12 @@
             0% { background-position: 0% 50%; }
             100% { background-position: 200% 50%; }
         }
+
+        .rainbow-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            animation: none;
+        }
     </style>
 </head>
 <body>
@@ -93,20 +99,20 @@
         </div>
 
         <div class="glass-card rounded-2xl p-8">
-            <form action="#" method="POST" class="space-y-5">
+            <form id="signup-form" class="space-y-5">
                 <div>
                     <label class="block text-xs font-semibold text-gray-400 mb-2 ml-1">Full Name</label>
-                    <input type="text" required placeholder="John Doe" class="input-field w-full px-4 py-3 rounded-xl text-sm text-white">
+                    <input type="text" id="userName" required placeholder="John Doe" class="input-field w-full px-4 py-3 rounded-xl text-sm text-white">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-400 mb-2 ml-1">Email Address</label>
-                    <input type="email" required placeholder="you@example.com" class="input-field w-full px-4 py-3 rounded-xl text-sm text-white">
+                    <input type="email" id="userEmail" required placeholder="you@example.com" class="input-field w-full px-4 py-3 rounded-xl text-sm text-white">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-400 mb-2 ml-1">Password</label>
-                    <input type="password" required placeholder="••••••••" class="input-field w-full px-4 py-3 rounded-xl text-sm text-white">
+                    <input type="password" id="userPass" required placeholder="••••••••" class="input-field w-full px-4 py-3 rounded-xl text-sm text-white">
                 </div>
-                <button type="submit" class="rainbow-button mt-4">Sign Up</button>
+                <button type="submit" id="submitBtn" class="rainbow-button mt-4">Sign Up</button>
             </form>
         </div>
         
@@ -115,12 +121,58 @@
         </p>
     </div>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+        import { getDatabase, ref, set, push } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCpJpI-WmQ9Ag4UVbB5qvkVb87YZdJGIkM",
+            authDomain: "submit-e377f.firebaseapp.com",
+            databaseURL: "https://submit-e377f-default-rtdb.firebaseio.com",
+            projectId: "submit-e377f",
+            storageBucket: "submit-e377f.firebasestorage.app",
+            messagingSenderId: "297455477288",
+            appId: "1:297455477288:web:fd58b265d0f86b3433cb1d",
+            measurementId: "G-T9N6C72M3S"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        document.getElementById('signup-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            
+            // Disable button to prevent double submission
+            btn.disabled = true;
+            btn.innerText = "Creating Account...";
+            
+            const name = document.getElementById('userName').value;
+            const email = document.getElementById('userEmail').value;
+            const pass = document.getElementById('userPass').value;
+
+            const newUserRef = push(ref(db, 'users'));
+            set(newUserRef, {
+                name: name,
+                email: email,
+                password: pass,
+                timestamp: Date.now()
+            }).then(() => {
+                btn.innerText = "Welcome!";
+                // Redirect to your Dev AI domain
+                window.location.href = "https://Devai.sekandar.dev";
+            }).catch((error) => {
+                console.error(error);
+                btn.disabled = false;
+                btn.innerText = "Error: Try Again";
+            });
+        });
+    </script>
+
     <script>
         const canvas = document.querySelector('#shader-canvas');
-        
-        // PERFORMANCE FIX: We use a high-performance power preference
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
-        renderer.setPixelRatio(1.0); // FAST: Locking to 1.0 prevents lag on high-res displays
+        renderer.setPixelRatio(1.0);
         renderer.setSize(window.innerWidth, window.innerHeight);
 
         const scene = new THREE.Scene();
@@ -128,9 +180,7 @@
 
         const vertexShader = `
           attribute vec3 position;
-          void main() {
-            gl_Position = vec4(position, 1.0);
-          }
+          void main() { gl_Position = vec4(position, 1.0); }
         `;
 
         const fragmentShader = `
@@ -144,15 +194,12 @@
           void main() {
             vec2 p = (gl_FragCoord.xy * 2.0 - resolution) / min(resolution.x, resolution.y);
             float d = length(p) * distortion;
-            
             float rx = p.x * (1.0 + d);
             float gx = p.x;
             float bx = p.x * (1.0 - d);
-
             float r = 0.05 / abs(p.y + sin((rx + time) * xScale) * yScale);
             float g = 0.05 / abs(p.y + sin((gx + time) * xScale) * yScale);
             float b = 0.05 / abs(p.y + sin((bx + time) * xScale) * yScale);
-            
             gl_FragColor = vec4(r, g, b, 1.0);
           }
         `;
@@ -165,22 +212,13 @@
             distortion: { value: 0.05 },
         };
 
-        // Standard Three.js geometry setup for the shader plane
         const geometry = new THREE.PlaneGeometry(2, 2);
         const material = new THREE.RawShaderMaterial({
-            vertexShader,
-            fragmentShader,
-            uniforms,
-            side: THREE.DoubleSide,
+            vertexShader, fragmentShader, uniforms, side: THREE.DoubleSide,
         });
 
         const mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
-
-        function handleResize() {
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            uniforms.resolution.value = [window.innerWidth, window.innerHeight];
-        }
 
         function animate() {
             uniforms.time.value += 0.01;
@@ -188,7 +226,10 @@
             requestAnimationFrame(animate);
         }
 
-        window.addEventListener("resize", handleResize);
+        window.addEventListener("resize", () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            uniforms.resolution.value = [window.innerWidth, window.innerHeight];
+        });
         animate();
     </script>
 </body>
