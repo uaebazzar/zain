@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dev AI — Sign In</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;800&family=JetBrains+Mono&display=swap" rel="stylesheet" />
+    <style>
+        :root { 
+            --color-1: 0 100% 63%;
+            --color-2: 270 100% 63%;
+            --color-3: 210 100% 63%;
+            --color-4: 195 100% 63%;
+            --color-5: 90 100% 63%;
+        }
+
+        body { 
+            background: #000; 
+            color: #fff; 
+            font-family: 'Plus Jakarta Sans'; 
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        #shader-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -1;
+        }
+
+        .glass-card {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
+        }
+
+        .input-field {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .input-field:focus {
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            transform: translateY(-1px);
+        }
+
+        .rainbow-button {
+            position: relative;
+            display: flex;
+            width: 100%;
+            height: 3.2rem;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: white;
+            background-image: linear-gradient(#000, #000), linear-gradient(#000 50%, rgba(18, 18, 19, 0.6) 80%, rgba(18, 18, 19, 0)), linear-gradient(90deg, hsl(var(--color-1)), hsl(var(--color-5)), hsl(var(--color-3)), hsl(var(--color-4)), hsl(var(--color-2)));
+            background-size: 200%;
+            background-clip: padding-box, border-box, border-box;
+            background-origin: border-box;
+            border: 2px solid transparent;
+            animation: rainbow-move 3s infinite linear;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .rainbow-button:active { transform: scale(0.98); }
+
+        @keyframes rainbow-move {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <canvas id="shader-canvas"></canvas>
+
+    <div class="w-full max-w-md px-6 relative z-10">
+        <div class="flex flex-col items-center mb-8">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-2 h-2 bg-white rounded-full animate-pulse shadow-[0_0_10px_#fff]"></div>
+                <span class="tracking-[0.4em] text-[11px] font-bold opacity-70 font-mono">DEV AI</span>
+            </div>
+            <h2 id="form-title" class="text-3xl font-extrabold tracking-tight">Sign In</h2>
+            <p id="form-subtitle" class="text-gray-400 text-sm mt-2 font-light">Welcome back! Please enter your details.</p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-8">
+            <form id="auth-form" action="#" method="POST" class="space-y-5">
+                <div id="name-group" class="hidden">
+                    <label class="block text-xs font-semibold text-gray-400 mb-2 ml-1">Full Name</label>
+                    <input type="text" placeholder="Enter your name" class="input-field w-full px-4 py-3 rounded-xl text-sm text-white">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-2 ml-1">Email Address</label>
+                    <input type="email" required placeholder="you@example.com" class="input-field w-full px-4 py-3 rounded-xl text-sm text-white">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-2 ml-1">Password</label>
+                    <input type="password" required placeholder="••••••••" class="input-field w-full px-4 py-3 rounded-xl text-sm text-white">
+                </div>
+
+                <div id="forgot-password" class="flex justify-end">
+                    <a href="#" class="text-xs text-gray-400 hover:text-white transition-colors font-medium">Forgot password?</a>
+                </div>
+
+                <button type="submit" id="submit-btn" class="rainbow-button mt-4">Sign In</button>
+            </form>
+        </div>
+
+        <p class="text-center mt-8 text-sm text-gray-400">
+            <span id="toggle-text">Don't have an account?</span>
+            <button id="toggle-auth" class="text-white font-bold ml-1 hover:underline underline-offset-4 decoration-2">Sign up</button>
+        </p>
+    </div>
+
+    <script>
+        // --- High Performance Aurora Shader ---
+        const canvas = document.querySelector('#shader-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+        const fragmentShader = `
+            uniform float iTime;
+            uniform vec2 iResolution;
+            #define NUM_OCTAVES 3
+
+            float rand(vec2 n) { return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453); }
+
+            float noise(vec2 p) {
+                vec2 ip = floor(p); vec2 u = fract(p);
+                u = u*u*(3.0-2.0*u);
+                return mix(mix(rand(ip), rand(ip + vec2(1.0, 0.0)), u.x),
+                           mix(rand(ip + vec2(0.0, 1.0)), rand(ip + vec2(1.0, 1.0)), u.x), u.y);
+            }
+
+            float fbm(vec2 x) {
+                float v = 0.0; float a = 0.3;
+                mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
+                for (int i = 0; i < NUM_OCTAVES; ++i) {
+                    v += a * noise(x); x = rot * x * 2.0 + vec2(100); a *= 0.4;
+                }
+                return v;
+            }
+
+            void main() {
+                vec2 shake = vec2(sin(iTime * 1.2), cos(iTime * 2.1)) * 0.005;
+                vec2 p = ((gl_FragCoord.xy + shake * iResolution.xy) - iResolution.xy * 0.5) / iResolution.y * mat2(6.0, -4.0, 4.0, 6.0);
+                vec4 o = vec4(0.0);
+                float f = 2.0 + fbm(p + vec2(iTime * 5.0, 0.0)) * 0.5;
+
+                for (float i = 0.0; i < 35.0; i++) {
+                    vec2 v = p + cos(i * i + (iTime + p.x * 0.08) * 0.025 + i * vec2(13.0, 11.0)) * 3.5 + vec2(sin(iTime * 3.0 + i), cos(iTime * 3.5 - i)) * 0.003;
+                    float tailNoise = fbm(v + vec2(iTime * 0.5, i)) * 0.3 * (1.0 - (i / 35.0));
+                    vec4 auroraColors = vec4(0.1 + 0.3 * sin(i * 0.2 + iTime * 0.4), 0.3 + 0.5 * cos(i * 0.3 + iTime * 0.5), 0.7 + 0.3 * sin(i * 0.4 + iTime * 0.3), 1.0);
+                    o += (auroraColors * exp(sin(i * i + iTime * 0.8)) / length(max(v, vec2(v.x * f * 0.015, v.y * 1.5)))) * (1.0 + tailNoise * 0.8) * (smoothstep(0.0, 1.0, i / 35.0) * 0.6);
+                }
+                gl_FragColor = vec4(tanh(pow(o / 100.0, vec4(1.6))).rgb * 1.5, 1.0);
+            }
+        `;
+
+        const material = new THREE.ShaderMaterial({
+            uniforms: { iTime: { value: 0 }, iResolution: { value: new THREE.Vector2() } },
+            vertexShader: `void main() { gl_Position = vec4(position, 1.0); }`,
+            fragmentShader
+        });
+
+        scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material));
+
+        function resize() {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            material.uniforms.iResolution.value.set(window.innerWidth, window.innerHeight);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function animate(t) {
+            material.uniforms.iTime.value = t * 0.001;
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+        animate(0);
+
+        // --- Auth Toggle Logic ---
+        const formTitle = document.getElementById('form-title');
+        const formSubtitle = document.getElementById('form-subtitle');
+        const nameGroup = document.getElementById('name-group');
+        const submitBtn = document.getElementById('submit-btn');
+        const toggleAuth = document.getElementById('toggle-auth');
+        const toggleText = document.getElementById('toggle-text');
+        const forgotPass = document.getElementById('forgot-password');
+
+        let isSignUp = false;
+        toggleAuth.addEventListener('click', () => {
+            isSignUp = !isSignUp;
+            formTitle.innerText = isSignUp ? "Create Account" : "Sign In";
+            formSubtitle.innerText = isSignUp ? "Join the Dev AI community today." : "Welcome back! Please enter your details.";
+            nameGroup.classList.toggle('hidden');
+            forgotPass.classList.toggle('hidden');
+            submitBtn.innerText = isSignUp ? "Sign Up" : "Sign In";
+            toggleText.innerText = isSignUp ? "Already have an account?" : "Don't have an account?";
+            toggleAuth.innerText = isSignUp ? "Sign in" : "Sign up";
+        });
+    </script>
+</body>
+  </html>
+
