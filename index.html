@@ -14,75 +14,41 @@
         }
 
         body { 
-            background: #000; 
-            color: #fff; 
-            font-family: 'Plus Jakarta Sans'; 
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            margin: 0;
+            background: #000; color: #fff; font-family: 'Plus Jakarta Sans'; 
+            height: 100vh; display: flex; align-items: center; justify-content: center;
+            overflow: hidden; margin: 0;
         }
 
-        #shader-canvas {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            z-index: -1;
-        }
+        #shader-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; }
 
         .glass-card {
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(30px);
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(30px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
         }
 
         .input-field {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12);
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .input-field:focus {
-            border-color: rgba(255, 255, 255, 0.5);
-            background: rgba(255, 255, 255, 0.1);
-            outline: none;
-            transform: translateY(-1px);
+            border-color: rgba(255, 255, 255, 0.5); background: rgba(255, 255, 255, 0.1);
+            outline: none; transform: translateY(-1px);
         }
 
         .rainbow-button {
-            position: relative;
-            display: flex;
-            width: 100%;
-            height: 3.2rem;
-            align-items: center;
-            justify-content: center;
-            border-radius: 0.75rem;
-            font-weight: 700;
-            font-size: 0.95rem;
-            color: white;
+            position: relative; display: flex; width: 100%; height: 3.2rem;
+            align-items: center; justify-content: center; border-radius: 0.75rem;
+            font-weight: 700; font-size: 0.95rem; color: white;
             background-image: linear-gradient(#000, #000), linear-gradient(#000 50%, rgba(18, 18, 19, 0.6) 80%, rgba(18, 18, 19, 0)), linear-gradient(90deg, hsl(var(--color-1)), hsl(var(--color-5)), hsl(var(--color-3)), hsl(var(--color-4)), hsl(var(--color-2)));
-            background-size: 200%;
-            background-clip: padding-box, border-box, border-box;
-            background-origin: border-box;
-            border: 2px solid transparent;
-            animation: rainbow-move 3s infinite linear;
-            cursor: pointer;
-            transition: transform 0.2s ease;
+            background-size: 200%; background-clip: padding-box, border-box, border-box;
+            background-origin: border-box; border: 2px solid transparent;
+            animation: rainbow-move 3s infinite linear; cursor: pointer; transition: transform 0.2s ease;
         }
 
-        @keyframes rainbow-move {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 200% 50%; }
-        }
-
-        .rainbow-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            animation: none;
-        }
+        @keyframes rainbow-move { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+        .rainbow-button:disabled { opacity: 0.6; cursor: not-allowed; animation: none; }
     </style>
 </head>
 <body>
@@ -114,16 +80,14 @@
                 </div>
                 <button type="submit" id="submitBtn" class="rainbow-button mt-4">Sign Up</button>
             </form>
+            <p id="error-msg" class="text-red-400 text-xs mt-4 text-center hidden"></p>
         </div>
-        
-        <p class="text-center mt-6 text-xs text-gray-500 font-medium">
-            By signing up, you agree to our Terms of Service.
-        </p>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-        import { getDatabase, ref, set, push } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+        import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCpJpI-WmQ9Ag4UVbB5qvkVb87YZdJGIkM",
@@ -137,35 +101,48 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getDatabase(app);
 
-        document.getElementById('signup-form').addEventListener('submit', (e) => {
+        const form = document.getElementById('signup-form');
+        const btn = document.getElementById('submitBtn');
+        const errorMsg = document.getElementById('error-msg');
+
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            
-            // Disable button to prevent double submission
             btn.disabled = true;
             btn.innerText = "Creating Account...";
+            errorMsg.classList.add('hidden');
             
             const name = document.getElementById('userName').value;
             const email = document.getElementById('userEmail').value;
             const pass = document.getElementById('userPass').value;
 
-            const newUserRef = push(ref(db, 'users'));
-            set(newUserRef, {
-                name: name,
-                email: email,
-                password: pass,
-                timestamp: Date.now()
-            }).then(() => {
-                btn.innerText = "Welcome!";
-                // Redirect to your Dev AI domain
+            try {
+                // 1. Create user in Firebase Auth
+                const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                const user = userCredential.user;
+
+                // 2. Add Display Name
+                await updateProfile(user, { displayName: name });
+
+                // 3. Store extra data in Database
+                await set(ref(db, 'users/' + user.uid), {
+                    username: name,
+                    email: email,
+                    createdAt: new Date().toISOString()
+                });
+
+                btn.innerText = "Success!";
                 window.location.href = "https://Devai.sekandar.dev";
-            }).catch((error) => {
+
+            } catch (error) {
                 console.error(error);
                 btn.disabled = false;
-                btn.innerText = "Error: Try Again";
-            });
+                btn.innerText = "Sign Up";
+                errorMsg.innerText = error.message;
+                errorMsg.classList.remove('hidden');
+            }
         });
     </script>
 
@@ -174,58 +151,25 @@
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
         renderer.setPixelRatio(1.0);
         renderer.setSize(window.innerWidth, window.innerHeight);
-
         const scene = new THREE.Scene();
         const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, -1);
-
-        const vertexShader = `
-          attribute vec3 position;
-          void main() { gl_Position = vec4(position, 1.0); }
-        `;
-
+        const vertexShader = `attribute vec3 position; void main() { gl_Position = vec4(position, 1.0); }`;
         const fragmentShader = `
           precision highp float;
-          uniform vec2 resolution;
-          uniform float time;
-          uniform float xScale;
-          uniform float yScale;
-          uniform float distortion;
-
+          uniform vec2 resolution; uniform float time;
           void main() {
             vec2 p = (gl_FragCoord.xy * 2.0 - resolution) / min(resolution.x, resolution.y);
-            float d = length(p) * distortion;
-            float rx = p.x * (1.0 + d);
-            float gx = p.x;
-            float bx = p.x * (1.0 - d);
-            float r = 0.05 / abs(p.y + sin((rx + time) * xScale) * yScale);
-            float g = 0.05 / abs(p.y + sin((gx + time) * xScale) * yScale);
-            float b = 0.05 / abs(p.y + sin((bx + time) * xScale) * yScale);
+            float d = length(p) * 0.05;
+            float r = 0.05 / abs(p.y + sin((p.x * (1.0 + d) + time)) * 0.5);
+            float g = 0.05 / abs(p.y + sin((p.x + time)) * 0.5);
+            float b = 0.05 / abs(p.y + sin((p.x * (1.0 - d) + time)) * 0.5);
             gl_FragColor = vec4(r, g, b, 1.0);
           }
         `;
-
-        const uniforms = {
-            resolution: { value: [window.innerWidth, window.innerHeight] },
-            time: { value: 0.0 },
-            xScale: { value: 1.0 },
-            yScale: { value: 0.5 },
-            distortion: { value: 0.05 },
-        };
-
-        const geometry = new THREE.PlaneGeometry(2, 2);
-        const material = new THREE.RawShaderMaterial({
-            vertexShader, fragmentShader, uniforms, side: THREE.DoubleSide,
-        });
-
-        const mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-
-        function animate() {
-            uniforms.time.value += 0.01;
-            renderer.render(scene, camera);
-            requestAnimationFrame(animate);
-        }
-
+        const uniforms = { resolution: { value: [window.innerWidth, window.innerHeight] }, time: { value: 0.0 } };
+        const material = new THREE.RawShaderMaterial({ vertexShader, fragmentShader, uniforms });
+        scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material));
+        function animate() { uniforms.time.value += 0.01; renderer.render(scene, camera); requestAnimationFrame(animate); }
         window.addEventListener("resize", () => {
             renderer.setSize(window.innerWidth, window.innerHeight);
             uniforms.resolution.value = [window.innerWidth, window.innerHeight];
