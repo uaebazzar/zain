@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dev AI — Sign In</title>
+    <title>Dev AI — Sign Up</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;800&family=JetBrains+Mono&display=swap" rel="stylesheet" />
@@ -82,8 +82,6 @@
             0% { background-position: 0% 50%; }
             100% { background-position: 200% 50%; }
         }
-
-        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -95,15 +93,15 @@
                 <div class="w-2 h-2 bg-white rounded-full animate-pulse shadow-[0_0_10px_#fff]"></div>
                 <span class="tracking-[0.4em] text-[11px] font-bold opacity-70 font-mono">DEV AI</span>
             </div>
-            <h2 id="form-title" class="text-3xl font-extrabold tracking-tight">Sign In</h2>
-            <p id="form-subtitle" class="text-gray-400 text-sm mt-2 font-light">Welcome back! Please enter your details.</p>
+            <h2 class="text-3xl font-extrabold tracking-tight">Create Account</h2>
+            <p class="text-gray-400 text-sm mt-2 font-light text-center">Join the community and start building.</p>
         </div>
 
         <div class="glass-card rounded-2xl p-8">
-            <form id="auth-form" action="#" method="POST" class="space-y-5">
-                <div id="name-group" class="hidden">
+            <form action="#" method="POST" class="space-y-5">
+                <div>
                     <label class="block text-xs font-semibold text-gray-400 mb-2 ml-1">Full Name</label>
-                    <input type="text" placeholder="Enter your name" class="input-field w-full px-4 py-3 rounded-xl text-sm text-white">
+                    <input type="text" required placeholder="John Doe" class="input-field w-full px-4 py-3 rounded-xl text-sm text-white">
                 </div>
 
                 <div>
@@ -116,25 +114,19 @@
                     <input type="password" required placeholder="••••••••" class="input-field w-full px-4 py-3 rounded-xl text-sm text-white">
                 </div>
 
-                <div id="forgot-password" class="flex justify-end">
-                    <a href="#" class="text-xs text-gray-400 hover:text-white transition-colors font-medium">Forgot password?</a>
-                </div>
-
-                <button type="submit" id="submit-btn" class="rainbow-button mt-4">Sign In</button>
+                <button type="submit" class="rainbow-button mt-4">Sign Up</button>
             </form>
         </div>
-
-        <p class="text-center mt-8 text-sm text-gray-400">
-            <span id="toggle-text">Don't have an account?</span>
-            <button id="toggle-auth" class="text-white font-bold ml-1 hover:underline underline-offset-4 decoration-2">Sign up</button>
+        
+        <p class="text-center mt-6 text-xs text-gray-500 font-medium">
+            By signing up, you agree to our Terms of Service.
         </p>
     </div>
 
     <script>
-        // --- High Performance Aurora Shader ---
         const canvas = document.querySelector('#shader-canvas');
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+        renderer.setPixelRatio(1.0); // Performance optimization
         renderer.setSize(window.innerWidth, window.innerHeight);
 
         const scene = new THREE.Scene();
@@ -156,26 +148,25 @@
 
             float fbm(vec2 x) {
                 float v = 0.0; float a = 0.3;
-                mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
+                mat2 rot = mat2(0.877, 0.479, -0.479, 0.877);
                 for (int i = 0; i < NUM_OCTAVES; ++i) {
-                    v += a * noise(x); x = rot * x * 2.0 + vec2(100); a *= 0.4;
+                    v += a * noise(x); x = rot * x * 2.0 + vec2(10.0); a *= 0.4;
                 }
                 return v;
             }
 
             void main() {
-                vec2 shake = vec2(sin(iTime * 1.2), cos(iTime * 2.1)) * 0.005;
-                vec2 p = ((gl_FragCoord.xy + shake * iResolution.xy) - iResolution.xy * 0.5) / iResolution.y * mat2(6.0, -4.0, 4.0, 6.0);
-                vec4 o = vec4(0.0);
-                float f = 2.0 + fbm(p + vec2(iTime * 5.0, 0.0)) * 0.5;
+                vec2 p = (gl_FragCoord.xy - iResolution.xy * 0.5) / iResolution.y * 6.0;
+                vec3 color = vec3(0.0);
+                float f = 2.0 + fbm(p + vec2(iTime * 2.0, 0.0)) * 0.5;
 
-                for (float i = 0.0; i < 35.0; i++) {
-                    vec2 v = p + cos(i * i + (iTime + p.x * 0.08) * 0.025 + i * vec2(13.0, 11.0)) * 3.5 + vec2(sin(iTime * 3.0 + i), cos(iTime * 3.5 - i)) * 0.003;
-                    float tailNoise = fbm(v + vec2(iTime * 0.5, i)) * 0.3 * (1.0 - (i / 35.0));
-                    vec4 auroraColors = vec4(0.1 + 0.3 * sin(i * 0.2 + iTime * 0.4), 0.3 + 0.5 * cos(i * 0.3 + iTime * 0.5), 0.7 + 0.3 * sin(i * 0.4 + iTime * 0.3), 1.0);
-                    o += (auroraColors * exp(sin(i * i + iTime * 0.8)) / length(max(v, vec2(v.x * f * 0.015, v.y * 1.5)))) * (1.0 + tailNoise * 0.8) * (smoothstep(0.0, 1.0, i / 35.0) * 0.6);
+                for (float i = 0.0; i < 16.0; i++) {
+                    vec2 v = p + cos(i * i + (iTime + p.x * 0.08) * 0.025 + i * vec2(13.0, 11.0)) * 3.5;
+                    float br = 0.02 / length(max(v, vec2(v.x * f * 0.015, v.y * 1.5)));
+                    vec3 aurora = vec3(0.1 + 0.3 * sin(i * 0.2 + iTime * 0.4), 0.3 + 0.5 * cos(i * 0.3 + iTime * 0.5), 0.7 + 0.3 * sin(i * 0.4 + iTime * 0.3));
+                    color += aurora * br * (i / 16.0);
                 }
-                gl_FragColor = vec4(tanh(pow(o / 100.0, vec4(1.6))).rgb * 1.5, 1.0);
+                gl_FragColor = vec4(color * 1.2, 1.0);
             }
         `;
 
@@ -200,28 +191,6 @@
             requestAnimationFrame(animate);
         }
         animate(0);
-
-        // --- Auth Toggle Logic ---
-        const formTitle = document.getElementById('form-title');
-        const formSubtitle = document.getElementById('form-subtitle');
-        const nameGroup = document.getElementById('name-group');
-        const submitBtn = document.getElementById('submit-btn');
-        const toggleAuth = document.getElementById('toggle-auth');
-        const toggleText = document.getElementById('toggle-text');
-        const forgotPass = document.getElementById('forgot-password');
-
-        let isSignUp = false;
-        toggleAuth.addEventListener('click', () => {
-            isSignUp = !isSignUp;
-            formTitle.innerText = isSignUp ? "Create Account" : "Sign In";
-            formSubtitle.innerText = isSignUp ? "Join the Dev AI community today." : "Welcome back! Please enter your details.";
-            nameGroup.classList.toggle('hidden');
-            forgotPass.classList.toggle('hidden');
-            submitBtn.innerText = isSignUp ? "Sign Up" : "Sign In";
-            toggleText.innerText = isSignUp ? "Already have an account?" : "Don't have an account?";
-            toggleAuth.innerText = isSignUp ? "Sign in" : "Sign up";
-        });
     </script>
 </body>
-  </html>
-
+</html>
