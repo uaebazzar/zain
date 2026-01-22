@@ -3,72 +3,41 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dev AI — Sign Up</title>
+    <title>Dev AI — Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;800&family=JetBrains+Mono&display=swap" rel="stylesheet" />
     <style>
-        :root { 
-            --color-1: 0 100% 63%; --color-2: 270 100% 63%; --color-3: 210 100% 63%;
-            --color-4: 195 100% 63%; --color-5: 90 100% 63%;
-        }
-
-        body { 
-            background: #000; color: #fff; font-family: 'Plus Jakarta Sans'; 
-            height: 100vh; display: flex; align-items: center; justify-content: center;
-            overflow: hidden; margin: 0;
-        }
-
+        :root { --color-1: 0 100% 63%; --color-2: 270 100% 63%; --color-3: 210 100% 63%; --color-4: 195 100% 63%; --color-5: 90 100% 63%; }
+        body { background: #000; color: #fff; font-family: 'Plus Jakarta Sans'; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0; }
         #shader-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; }
-
-        .glass-card {
-            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
-        }
-
-        .input-field {
-            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12);
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .input-field:focus {
-            border-color: rgba(255, 255, 255, 0.5); background: rgba(255, 255, 255, 0.1);
-            outline: none; transform: translateY(-1px);
-        }
-
-        .rainbow-button {
-            position: relative; display: flex; width: 100%; height: 3.2rem;
-            align-items: center; justify-content: center; border-radius: 0.75rem;
-            font-weight: 700; font-size: 0.95rem; color: white;
-            background-image: linear-gradient(#000, #000), linear-gradient(#000 50%, rgba(18, 18, 19, 0.6) 80%, rgba(18, 18, 19, 0)), linear-gradient(90deg, hsl(var(--color-1)), hsl(var(--color-5)), hsl(var(--color-3)), hsl(var(--color-4)), hsl(var(--color-2)));
-            background-size: 200%; background-clip: padding-box, border-box, border-box;
-            background-origin: border-box; border: 2px solid transparent;
-            animation: rainbow-move 3s infinite linear; cursor: pointer; transition: transform 0.2s ease;
-        }
-
+        .glass-card { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9); }
+        .input-field { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .input-field:focus { border-color: rgba(255, 255, 255, 0.5); background: rgba(255, 255, 255, 0.1); outline: none; transform: translateY(-1px); }
+        .rainbow-button { position: relative; display: flex; width: 100%; height: 3.2rem; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 700; font-size: 0.95rem; color: white; background-image: linear-gradient(#000, #000), linear-gradient(#000 50%, rgba(18, 18, 19, 0.6) 80%, rgba(18, 18, 19, 0)), linear-gradient(90deg, hsl(var(--color-1)), hsl(var(--color-5)), hsl(var(--color-3)), hsl(var(--color-4)), hsl(var(--color-2))); background-size: 200%; background-clip: padding-box, border-box, border-box; background-origin: border-box; border: 2px solid transparent; animation: rainbow-move 3s infinite linear; cursor: pointer; }
         @keyframes rainbow-move { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
         .rainbow-button:disabled { opacity: 0.6; cursor: not-allowed; animation: none; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
     <canvas id="shader-canvas"></canvas>
 
     <div class="w-full max-w-md px-6 relative z-10">
-        <div class="flex flex-col items-center mb-8">
+        <div class="flex flex-col items-center mb-8 text-center">
             <div class="flex items-center gap-3 mb-4">
                 <div class="w-2 h-2 bg-white rounded-full animate-pulse shadow-[0_0_10px_#fff]"></div>
                 <span class="tracking-[0.4em] text-[11px] font-bold opacity-70 font-mono">DEV AI</span>
             </div>
-            <h2 class="text-3xl font-extrabold tracking-tight">Create Account</h2>
-            <p class="text-gray-400 text-sm mt-2 font-light text-center">Join the community and start building.</p>
+            <h2 id="form-title" class="text-3xl font-extrabold tracking-tight">Create Account</h2>
+            <p id="form-subtitle" class="text-gray-400 text-sm mt-2 font-light">Join the community and start building.</p>
         </div>
 
         <div class="glass-card rounded-2xl p-8">
-            <form id="signup-form" class="space-y-5">
-                <div>
+            <form id="auth-form" class="space-y-5">
+                <div id="name-field">
                     <label class="block text-xs font-semibold text-gray-400 mb-2 ml-1">Full Name</label>
-                    <input type="text" id="userName" required placeholder="John Doe" class="input-field w-full px-4 py-3 rounded-xl text-sm text-white">
+                    <input type="text" id="userName" placeholder="John Doe" class="input-field w-full px-4 py-3 rounded-xl text-sm text-white">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-400 mb-2 ml-1">Email Address</label>
@@ -80,13 +49,20 @@
                 </div>
                 <button type="submit" id="submitBtn" class="rainbow-button mt-4">Sign Up</button>
             </form>
+            
             <p id="error-msg" class="text-red-400 text-xs mt-4 text-center hidden"></p>
+
+            <div class="mt-6 text-center">
+                <button id="toggle-auth" class="text-xs text-gray-400 hover:text-white transition-colors">
+                    Already have an account? <span class="text-white font-bold underline">Sign In</span>
+                </button>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
         import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -104,14 +80,29 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        const form = document.getElementById('signup-form');
+        let isSignUp = true;
+        const form = document.getElementById('auth-form');
         const btn = document.getElementById('submitBtn');
+        const toggleBtn = document.getElementById('toggle-auth');
+        const nameField = document.getElementById('name-field');
+        const formTitle = document.getElementById('form-title');
+        const formSubtitle = document.getElementById('form-subtitle');
         const errorMsg = document.getElementById('error-msg');
+
+        toggleBtn.addEventListener('click', () => {
+            isSignUp = !isSignUp;
+            formTitle.innerText = isSignUp ? "Create Account" : "Welcome Back";
+            formSubtitle.innerText = isSignUp ? "Join the community and start building." : "Log in to your account to continue.";
+            btn.innerText = isSignUp ? "Sign Up" : "Sign In";
+            nameField.classList.toggle('hidden');
+            toggleBtn.innerHTML = isSignUp ? 'Already have an account? <span class="text-white font-bold underline">Sign In</span>' : 'Need an account? <span class="text-white font-bold underline">Sign Up</span>';
+            errorMsg.classList.add('hidden');
+        });
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             btn.disabled = true;
-            btn.innerText = "Creating Account...";
+            btn.innerText = "Processing...";
             errorMsg.classList.add('hidden');
             
             const name = document.getElementById('userName').value;
@@ -119,41 +110,31 @@
             const pass = document.getElementById('userPass').value;
 
             try {
-                // 1. Create user in Firebase Auth
-                const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-                const user = userCredential.user;
-
-                // 2. Add Display Name
-                await updateProfile(user, { displayName: name });
-
-                // 3. Store extra data in Database
-                await set(ref(db, 'users/' + user.uid), {
-                    username: name,
-                    email: email,
-                    createdAt: new Date().toISOString()
-                });
-
-                btn.innerText = "Success!";
+                if (isSignUp) {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                    await updateProfile(userCredential.user, { displayName: name });
+                    await set(ref(db, 'users/' + userCredential.user.uid), { username: name, email: email, createdAt: new Date().toISOString() });
+                } else {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                }
                 window.location.href = "https://Devai.sekandar.dev";
-
             } catch (error) {
-                console.error(error);
                 btn.disabled = false;
-                btn.innerText = "Sign Up";
-                errorMsg.innerText = error.message;
+                btn.innerText = isSignUp ? "Sign Up" : "Sign In";
+                errorMsg.innerText = error.message.replace("Firebase: ", "");
                 errorMsg.classList.remove('hidden');
             }
         });
     </script>
 
     <script>
+        // RGB Distortion Wave Shader
         const canvas = document.querySelector('#shader-canvas');
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
         renderer.setPixelRatio(1.0);
         renderer.setSize(window.innerWidth, window.innerHeight);
         const scene = new THREE.Scene();
         const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, -1);
-        const vertexShader = `attribute vec3 position; void main() { gl_Position = vec4(position, 1.0); }`;
         const fragmentShader = `
           precision highp float;
           uniform vec2 resolution; uniform float time;
@@ -167,7 +148,10 @@
           }
         `;
         const uniforms = { resolution: { value: [window.innerWidth, window.innerHeight] }, time: { value: 0.0 } };
-        const material = new THREE.RawShaderMaterial({ vertexShader, fragmentShader, uniforms });
+        const material = new THREE.RawShaderMaterial({ 
+            vertexShader: `attribute vec3 position; void main() { gl_Position = vec4(position, 1.0); }`, 
+            fragmentShader, uniforms 
+        });
         scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material));
         function animate() { uniforms.time.value += 0.01; renderer.render(scene, camera); requestAnimationFrame(animate); }
         window.addEventListener("resize", () => {
